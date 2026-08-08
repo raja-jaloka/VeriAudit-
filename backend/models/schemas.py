@@ -171,14 +171,26 @@ class BenchmarkRunSummary(BaseModel):
     case_results: List[BenchmarkResultItem]
 
 
+class EntityOccurrence(BaseModel):
+    context: str = Field(..., description="Full sentence context for this specific reference")
+    start_char: int
+    end_char: int
+    line_number: int
+    speaker_or_heading: Optional[str] = None
+    role_modifier: Optional[str] = None
+
+
 class ExtractedEntity(BaseModel):
-    category: str = Field(..., description="Monetary, Signatory, Vendor/System, Protocol, Retention/Deadline, Compliance Risk")
-    value: str = Field(..., description="Extracted verbatim value")
-    context: str = Field(..., description="Surrounding sentence context")
+    category: str = Field(..., description="Entity category (Objectives, Concepts, Deliverables, Dates, People, Systems)")
+    value: str = Field(..., description="Canonical entity name or title")
+    disambiguated_label: Optional[str] = Field(None, description="Disambiguated label if multiple entities share a name")
+    context: str = Field(..., description="Primary or first sentence context")
     start_char: int
     end_char: int
     line_number: int
     confidence: float = 1.0
+    occurrences: List[EntityOccurrence] = Field(default_factory=list, description="All distinct references and contexts across the document")
+    total_occurrences: int = 1
 
 
 class ExtractionResponse(BaseModel):
@@ -186,4 +198,3 @@ class ExtractionResponse(BaseModel):
     total_entities: int
     entities_by_category: Dict[str, List[ExtractedEntity]]
     entities: List[ExtractedEntity]
-

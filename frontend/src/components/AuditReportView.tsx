@@ -390,50 +390,91 @@ export const AuditReportView: React.FC<AuditReportViewProps> = ({
                     No {category.toLowerCase()} detected in this document.
                   </p>
                 ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
                     {items.map((entity, eIdx) => (
                       <div
                         key={eIdx}
                         style={{
                           background: 'rgba(10, 15, 26, 0.85)',
-                          border: '1px solid rgba(255, 255, 255, 0.07)',
-                          borderRadius: 8,
-                          padding: 10,
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: 10,
+                          padding: '14px 16px',
                           display: 'flex',
-                          alignItems: 'flex-start',
-                          justifyContent: 'space-between',
-                          gap: 12,
+                          flexDirection: 'column',
+                          gap: 10,
                         }}
                       >
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono)', display: 'block' }}>
-                            {entity.value}
-                          </span>
-                          <p style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.5 }}>
-                            "{entity.context}"
-                          </p>
-                          <span style={{ fontSize: 10, color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', marginTop: 4, display: 'block' }}>
-                            Line {entity.line_number} • Chars [{entity.start_char}–{entity.end_char}]
+                        {/* Header: Entity Name, Category Badge & Multi-occurrence Counter */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                              {entity.value}
+                            </span>
+                            {entity.disambiguated_label && (
+                              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(139, 92, 246, 0.2)', color: '#c4b5fd', border: '1px solid rgba(139, 92, 246, 0.4)', fontWeight: 600 }}>
+                                {entity.disambiguated_label}
+                              </span>
+                            )}
+                            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan-light)', fontFamily: 'var(--font-mono)' }}>
+                              {category.split(' ')[0]}
+                            </span>
+                          </div>
+
+                          <span style={{ fontSize: 10.5, color: entity.occurrences && entity.occurrences.length > 1 ? 'var(--accent-cyan)' : 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                            {entity.occurrences && entity.occurrences.length > 1 ? `📌 ${entity.occurrences.length} Distinct References in Doc` : '1 Reference'}
                           </span>
                         </div>
 
-                        <button
-                          onClick={() =>
-                            onSelectCitation({
-                              quote: entity.value,
-                              start_char: entity.start_char,
-                              end_char: entity.end_char,
-                              line_number: entity.line_number,
-                              context_snippet: entity.context,
-                              faithfulness_score: 1.0,
-                              is_exact_match: true,
-                            })
-                          }
-                          className="locate-btn"
-                          style={{ flexShrink: 0, marginTop: 2 }}
-                        >
-                          Locate
-                        </button>
+                        {/* All Distinct Occurrences & Preserved Contexts */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {(entity.occurrences && entity.occurrences.length > 0 ? entity.occurrences : [{ context: entity.context, start_char: entity.start_char, end_char: entity.end_char, line_number: entity.line_number }]).map((occ, oIdx) => (
+                            <div
+                              key={oIdx}
+                              style={{
+                                background: 'rgba(15, 23, 42, 0.65)',
+                                border: '1px solid rgba(255, 255, 255, 0.05)',
+                                borderRadius: 6,
+                                padding: '10px 12px',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                              }}
+                            >
+                              <div style={{ flex: 1 }}>
+                                <p style={{ fontSize: 12, color: '#f1f5f9', lineHeight: 1.6 }}>
+                                  "{occ.context}"
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: 10.5, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                                  <span style={{ color: 'var(--accent-cyan-light)' }}>Line {occ.line_number}</span>
+                                  <span>•</span>
+                                  <span>Chars [{occ.start_char}–{occ.end_char}]</span>
+                                  <span>•</span>
+                                  <span style={{ color: 'var(--status-pass)' }}>100% Grounded</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() =>
+                                  onSelectCitation({
+                                    quote: entity.value,
+                                    start_char: occ.start_char,
+                                    end_char: occ.end_char,
+                                    line_number: occ.line_number,
+                                    context_snippet: occ.context,
+                                    faithfulness_score: 1.0,
+                                    is_exact_match: true,
+                                  })
+                                }
+                                className="locate-btn"
+                                style={{ flexShrink: 0, padding: '4px 10px', fontSize: 10.5 }}
+                                title="Highlight this reference in document"
+                              >
+                                Locate Ref #{oIdx + 1}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>

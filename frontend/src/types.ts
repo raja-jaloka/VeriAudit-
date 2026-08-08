@@ -119,14 +119,26 @@ export interface BenchmarkRunSummary {
   case_results: BenchmarkResultItem[];
 }
 
+export interface EntityOccurrence {
+  context: string;
+  start_char: number;
+  end_char: number;
+  line_number: number;
+  speaker_or_heading?: string | null;
+  role_modifier?: string | null;
+}
+
 export interface ExtractedEntity {
   category: string;
   value: string;
+  disambiguated_label?: string | null;
   context: string;
   start_char: number;
   end_char: number;
   line_number: number;
   confidence: number;
+  occurrences?: EntityOccurrence[];
+  total_occurrences?: number;
 }
 
 export interface ExtractionResponse {
@@ -135,4 +147,3 @@ export interface ExtractionResponse {
   entities_by_category: Record<string, ExtractedEntity[]>;
   entities: ExtractedEntity[];
 }
-
