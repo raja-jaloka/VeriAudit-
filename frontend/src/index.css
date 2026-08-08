@@ -297,14 +297,15 @@ body {
 /* Main Split-Pane Layout */
 .main-container {
   flex: 1;
-  max-width: 1750px;
+  max-width: 1850px;
   width: 100%;
   margin: 0 auto;
-  padding: 20px 28px;
+  padding: 16px 24px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 20px;
   align-items: stretch;
+  min-height: calc(100vh - 90px);
 }
 
 @media (max-width: 1080px) {
@@ -324,8 +325,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: calc(100vh - 120px);
-  min-height: 550px;
+  height: calc(100vh - 100px);
+  min-height: 620px;
 }
 
 /* Left Pane: Document Explorer */
@@ -564,9 +565,9 @@ body {
 .report-view-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  height: calc(100vh - 120px);
-  min-height: 550px;
+  gap: 14px;
+  height: calc(100vh - 100px);
+  min-height: 620px;
 }
 
 /* Scorecard & Telemetry Dashboard */
@@ -705,7 +706,7 @@ body {
   padding: 7px 14px;
   font-size: 12px;
   color: #ffffff;
-  width: 240px;
+  width: 220px;
   outline: none;
   transition: border-color 0.2s;
 }
@@ -725,7 +726,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-right: 4px;
+  padding-right: 6px;
+  max-height: calc(100vh - 280px);
+  min-height: 400px;
 }
 
 .rule-audit-card {
@@ -735,6 +738,7 @@ body {
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: all 0.2s ease;
+  width: 100%;
 }
 
 .rule-audit-card:hover {
@@ -755,14 +759,16 @@ body {
 }
 
 .rule-card-header {
-  padding: 14px 18px;
+  padding: 12px 16px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   cursor: pointer;
   user-select: none;
   background: rgba(15, 23, 42, 0.4);
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .rule-card-header:hover {
@@ -771,8 +777,19 @@ body {
 
 .rule-header-left {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 260px;
+  flex-wrap: wrap;
+}
+
+.rule-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 /* Badges */
