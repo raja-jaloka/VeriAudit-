@@ -6,12 +6,15 @@ import { BenchmarkModal } from './components/BenchmarkModal';
 import { RulePackManagerModal } from './components/RulePackManagerModal';
 import { ExportModal } from './components/ExportModal';
 import { ImportDocumentModal } from './components/ImportDocumentModal';
+import { HiggsfieldCanvas } from './components/HiggsfieldCanvas';
+import { AdHocPrompter } from './components/AdHocPrompter';
 import type {
   AuditReport,
   RulePack,
   SampleDocumentPreset,
   GroundedCitation,
   RuleRequirement,
+  RuleAuditResult,
 } from './types';
 
 const API_BASE = 'http://localhost:8000/api';
@@ -196,6 +199,30 @@ export const App: React.FC = () => {
     }
   };
 
+  // Handle ad-hoc prompt rule addition
+  const handleAddPromptRule = (newRule: RuleAuditResult) => {
+    if (!report) return;
+    const updatedResults = [newRule, ...report.results.filter((r) => r.rule_id !== newRule.rule_id)];
+    const passed = updatedResults.filter((r) => r.verdict === 'PASS').length;
+    const failed = updatedResults.filter((r) => r.verdict === 'FAIL').length;
+    const abstain = updatedResults.filter((r) => r.verdict === 'INSUFFICIENT_EVIDENCE').length;
+    const score = passed + failed > 0 ? Math.round((passed / (passed + failed)) * 100) : 100;
+
+    setReport({
+      ...report,
+      summary: {
+        ...report.summary,
+        total_rules: updatedResults.length,
+        passed_count: passed,
+        failed_count: failed,
+        insufficient_evidence_count: abstain,
+        overall_compliance_score: score,
+        risk_level: failed >= 2 ? 'HIGH' : failed === 1 ? 'MODERATE' : 'LOW',
+      },
+      results: updatedResults,
+    });
+  };
+
   // Citation selection for bi-directional scroll & glow
   const handleSelectCitation = (
     citation: GroundedCitation | null,
@@ -219,7 +246,10 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-wrapper">
+    <div className="app-wrapper" style={{ position: 'relative', minHeight: '100vh', overflowX: 'hidden' }}>
+      {/* Higgsfield Interactive Neural Particle Background */}
+      <HiggsfieldCanvas />
+
       {/* Top Navbar Header */}
       <Header
         rulePacks={rulePacks}
@@ -240,9 +270,9 @@ export const App: React.FC = () => {
       />
 
       {/* Main Split-Pane Layout */}
-      <main className="main-container">
+      <main className="main-container" style={{ position: 'relative', zIndex: 1 }}>
         {/* Left Column: Interactive Source Document Viewer */}
-        <section style={{ height: '100%' }}>
+        <section style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <SplitPaneDocumentViewer
             documentText={documentText}
             documentTitle={documentTitle}
@@ -257,8 +287,17 @@ export const App: React.FC = () => {
           />
         </section>
 
-        {/* Right Column: Verifiable Grounded Audit Report View */}
-        <section style={{ height: '100%' }}>
+        {/* Right Column: Grounded Audit & Ad-Hoc Prompter */}
+        <section style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Ad-Hoc Natural Language Prompter */}
+          <AdHocPrompter
+            documentText={documentText}
+            documentTitle={documentTitle}
+            documentType={documentType}
+            onAddPromptRule={handleAddPromptRule}
+          />
+
+          {/* Grounded Audit Report & Scorecard */}
           <AuditReportView
             report={report}
             isLoading={isAuditing}

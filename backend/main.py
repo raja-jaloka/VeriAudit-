@@ -4,6 +4,9 @@ FastAPI Application for VeriAudit: Grounded & Verifiable AI Compliance Agent.
 
 import os
 from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
+import uuid
+import re
 from fastapi import FastAPI, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
@@ -18,11 +21,15 @@ from .models.schemas import (
     RulePack,
     RuleRequirement,
     ExtractionResponse,
+    RuleAuditResult,
+    SeverityLevel,
 )
 from .engine.audit_agent import VeriAuditAgent
 from .engine.grounding_validator import GroundingValidator
 from .engine.extractor import EntityExtractor
 from .engine.rule_synthesizer import DynamicRuleSynthesizer
+from .ingestion.cleaner import DocumentCleaner
+from .ingestion.chunker import DocumentChunker
 from .ingestion.file_parser import DocumentFileParser
 from .rules.presets import get_rule_pack, list_all_rule_packs, PRESET_RULE_PACKS
 from .sample_data.presets import SAMPLE_DOCUMENTS
@@ -152,6 +159,44 @@ def devise_rules_from_document(request: AuditRequest):
         document_title=request.document_title or "Analyzed Document"
     )
     return pack
+
+
+class PromptRuleRequest(BaseModel):
+    document_text: str
+    prompt: str
+    document_title: Optional[str] = "Document"
+    document_type: Optional[str] = "unstructured_raw"
+
+
+@app.post("/api/prompt-rule", response_model=RuleAuditResult)
+def execute_prompt_rule(req: PromptRuleRequest):
+    """
+    Translates any natural language question or ad-hoc compliance query into a groundable rule,
+    executes 5-factor confidence testing, and returns exact character citations in < 2ms.
+    """
+    if not req.document_text.strip() or not req.prompt.strip():
+        raise HTTPException(status_code=400, detail="Document text and prompt cannot be empty.")
+
+    # Clean prompt into keywords
+    words = [w.lower() for w in re.findall(r"\b[A-Za-z0-9$%-]{3,}\b", req.prompt) if w.lower() not in {"what", "when", "where", "which", "there", "have", "does", "anyone", "check", "tell", "show", "find"}]
+    
+    rule_name = f"Ad-Hoc: {req.prompt[:45]}..." if len(req.prompt) > 45 else f"Ad-Hoc: {req.prompt}"
+    rule = RuleRequirement(
+        id=f"RULE-ADHOC-{uuid.uuid4().hex[:4].upper()}",
+        name=rule_name,
+        description=req.prompt,
+        category="Ad-Hoc Query",
+        severity=SeverityLevel.HIGH,
+        mandatory_keywords=words[:6] if words else [req.prompt],
+        negative_constraints=["violation", "unapproved", "denied", "prohibited", "failed"],
+        positive_indicators=words[:4] if words else ["approved", "verified", "confirmed"],
+        min_confidence=0.70
+    )
+
+    cleaning_res = DocumentCleaner.clean(req.document_text, doc_type=req.document_type or "unstructured_raw")
+    spans = DocumentChunker.chunk_document(cleaning_res.cleaned_text)
+    result = agent._evaluate_rule_against_spans(rule, cleaning_res.cleaned_text, spans)
+    return result
 
 
 
