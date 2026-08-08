@@ -19,6 +19,45 @@ export const AuditReportView: React.FC<AuditReportViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [extractions, setExtractions] = useState<ExtractionResponse | null>(null);
 
+  // Per-card expanded state tracking by rule_id (default all open)
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+
+  // Initialize or update expanded cards when report results change
+  useEffect(() => {
+    if (report && report.results) {
+      const initial: Record<string, boolean> = {};
+      report.results.forEach((r) => {
+        initial[r.rule_id] = true;
+      });
+      setExpandedCards(initial);
+    }
+  }, [report]);
+
+  const toggleCard = (ruleId: string) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [ruleId]: !prev[ruleId],
+    }));
+  };
+
+  const expandAll = () => {
+    if (!report) return;
+    const allOpen: Record<string, boolean> = {};
+    report.results.forEach((r) => {
+      allOpen[r.rule_id] = true;
+    });
+    setExpandedCards(allOpen);
+  };
+
+  const collapseAll = () => {
+    if (!report) return;
+    const allClosed: Record<string, boolean> = {};
+    report.results.forEach((r) => {
+      allClosed[r.rule_id] = false;
+    });
+    setExpandedCards(allClosed);
+  };
+
   // Fetch structured entities whenever a report is loaded
   useEffect(() => {
     if (report && report.raw_text) {
@@ -30,7 +69,10 @@ export const AuditReportView: React.FC<AuditReportViewProps> = ({
           document_title: report.document_title,
         }),
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error('Extraction failed');
+          return res.json();
+        })
         .then((data) => setExtractions(data))
         .catch((err) => console.error('Failed to extract entities:', err));
     }
@@ -107,7 +149,7 @@ export const AuditReportView: React.FC<AuditReportViewProps> = ({
             transition: 'all 0.15s ease',
           }}
         >
-          ⚖️ Compliance Rules & Tested Confidence ({results.length})
+          ⚖️ Compliance Rules & Evidence ({results.length})
         </button>
         <button
           onClick={() => setActiveTab('entities')}
@@ -220,6 +262,26 @@ export const AuditReportView: React.FC<AuditReportViewProps> = ({
               </button>
             </div>
 
+            {/* Expand / Collapse Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={expandAll}
+                className="btn-secondary"
+                style={{ padding: '4px 8px', fontSize: 10.5 }}
+                title="Expand all evidence drawers"
+              >
+                Expand All
+              </button>
+              <button
+                onClick={collapseAll}
+                className="btn-secondary"
+                style={{ padding: '4px 8px', fontSize: 10.5 }}
+                title="Collapse all evidence drawers"
+              >
+                Collapse All
+              </button>
+            </div>
+
             {/* Search input */}
             <div className="search-input-wrap">
               <input
@@ -243,6 +305,8 @@ export const AuditReportView: React.FC<AuditReportViewProps> = ({
                 <RuleCard
                   key={r.rule_id}
                   result={r}
+                  isExpanded={!!expandedCards[r.rule_id]}
+                  onToggle={() => toggleCard(r.rule_id)}
                   onSelectCitation={onSelectCitation}
                   activeCitation={activeCitation}
                 />
@@ -333,17 +397,19 @@ export const AuditReportView: React.FC<AuditReportViewProps> = ({
 
 interface RuleCardProps {
   result: RuleAuditResult;
+  isExpanded: boolean;
+  onToggle: () => void;
   onSelectCitation: (citation: GroundedCitation | null, isCounter?: boolean) => void;
   activeCitation?: GroundedCitation | null;
 }
 
 const RuleCard: React.FC<RuleCardProps> = ({
   result,
+  isExpanded,
+  onToggle,
   onSelectCitation,
   activeCitation,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
-
   const isPass = result.verdict === 'PASS';
   const isFail = result.verdict === 'FAIL';
 
@@ -376,12 +442,85 @@ const RuleCard: React.FC<RuleCardProps> = ({
   const cardClass = isFail ? 'rule-card-fail' : isPass ? 'rule-card-pass' : 'rule-card-abstain';
   const confPercent = Math.round(result.confidence * 100);
 
+  // Dynamic Adaptive Evidence Badge text & styling
+  const numCitations = result.citations ? result.citations.length : 0;
+  const numViolations = result.counter_evidence ? result.counter_evidence.length : 0;
+
+  const dynamicEvidenceButton = isPass ? (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="btn-secondary"
+      style={{
+        padding: '5px 10px',
+        fontSize: 11,
+        borderColor: 'rgba(16, 185, 129, 0.4)',
+        color: 'var(--status-pass)',
+        background: isExpanded ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        cursor: 'pointer',
+      }}
+    >
+      <span>📋 {numCitations} Grounded Citation{numCitations !== 1 ? 's' : ''}</span>
+      <span style={{ fontSize: 9 }}>{isExpanded ? '▲ Hide' : '▼ View'}</span>
+    </button>
+  ) : isFail ? (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="btn-secondary"
+      style={{
+        padding: '5px 10px',
+        fontSize: 11,
+        borderColor: 'rgba(244, 63, 94, 0.4)',
+        color: 'var(--status-fail)',
+        background: isExpanded ? 'rgba(244, 63, 94, 0.2)' : 'rgba(244, 63, 94, 0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        cursor: 'pointer',
+      }}
+    >
+      <span>⚠️ {numViolations || 1} Violation Evidence</span>
+      <span style={{ fontSize: 9 }}>{isExpanded ? '▲ Hide' : '▼ View'}</span>
+    </button>
+  ) : (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="btn-secondary"
+      style={{
+        padding: '5px 10px',
+        fontSize: 11,
+        borderColor: 'rgba(245, 158, 11, 0.4)',
+        color: 'var(--status-abstain)',
+        background: isExpanded ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        cursor: 'pointer',
+      }}
+    >
+      <span>🔍 0 Citations (Abstention Proof)</span>
+      <span style={{ fontSize: 9 }}>{isExpanded ? '▲ Hide' : '▼ View'}</span>
+    </button>
+  );
+
   return (
     <div className={`rule-audit-card ${cardClass}`}>
       {/* Header */}
       <div
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={onToggle}
         className="rule-card-header"
+        style={{ cursor: 'pointer' }}
       >
         <div className="rule-header-left">
           <div style={{ paddingTop: 2 }}>{statusBadge}</div>
@@ -405,7 +544,10 @@ const RuleCard: React.FC<RuleCardProps> = ({
           </div>
         </div>
 
-        <div className="rule-header-right">
+        <div className="rule-header-right" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Dynamic Evidence Trigger Button */}
+          {dynamicEvidenceButton}
+
           {/* Dynamic Tested Confidence Pill */}
           <div className="confidence-block" title="Mathematically tested against verbatim citations, keyword salience, and authority weighting">
             <span className="confidence-label">Tested Confidence</span>
@@ -413,6 +555,7 @@ const RuleCard: React.FC<RuleCardProps> = ({
               {confPercent}%
             </span>
           </div>
+
           <svg className={`expand-chevron ${isExpanded ? 'rotated' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="6 9 12 15 18 9" />
           </svg>
@@ -421,7 +564,7 @@ const RuleCard: React.FC<RuleCardProps> = ({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="rule-card-body">
+        <div className="rule-card-body" style={{ animation: 'fadeIn 0.2s ease' }}>
           {/* Tested Dynamic Confidence Bar */}
           <div style={{ background: 'rgba(15, 23, 42, 0.7)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--text-muted)' }}>

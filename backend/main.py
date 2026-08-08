@@ -4,7 +4,7 @@ FastAPI Application for VeriAudit: Grounded & Verifiable AI Compliance Agent.
 
 import os
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +23,7 @@ from .engine.audit_agent import VeriAuditAgent
 from .engine.grounding_validator import GroundingValidator
 from .engine.extractor import EntityExtractor
 from .engine.rule_synthesizer import DynamicRuleSynthesizer
+from .ingestion.file_parser import DocumentFileParser
 from .rules.presets import get_rule_pack, list_all_rule_packs, PRESET_RULE_PACKS
 from .sample_data.presets import SAMPLE_DOCUMENTS
 from .evaluator.runner import BenchmarkRunner
@@ -114,6 +115,27 @@ def extract_entities(request: AuditRequest):
         document_title=request.document_title or "Untitled Document"
     )
     return extracted
+
+
+@app.post("/api/upload-file")
+async def upload_file(request: Request):
+    """
+    Accepts raw binary or text streams for multi-format documents (.pdf, .docx, .doc, .csv, .tsv, .json, .txt, .md, .log),
+    parses binary structures, and extracts clean text lines with line mapping.
+    """
+    content_bytes = await request.body()
+    if not content_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    
+    filename = request.headers.get("x-filename", "uploaded_document.txt")
+    extracted_text, title, doc_type = DocumentFileParser.parse_file(filename, content_bytes)
+    return {
+        "text": extracted_text,
+        "title": title,
+        "doc_type": doc_type,
+        "filename": filename,
+        "size_bytes": len(content_bytes)
+    }
 
 
 @app.post("/api/devise-rules", response_model=RulePack)
