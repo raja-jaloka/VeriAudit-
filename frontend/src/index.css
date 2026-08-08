@@ -565,9 +565,10 @@ body {
 .report-view-container {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  height: calc(100vh - 100px);
-  min-height: 620px;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Scorecard & Telemetry Dashboard */
@@ -577,14 +578,15 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 14px;
   box-shadow: var(--shadow-card);
+  flex-shrink: 0;
 }
 
 .scorecard-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 @media (max-width: 640px) {
@@ -594,19 +596,19 @@ body {
 }
 
 .scorecard-item {
-  background: rgba(10, 15, 26, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(10, 15, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 4px;
+  gap: 3px;
 }
 
 .scorecard-label {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10.5px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-dim);
@@ -620,7 +622,7 @@ body {
 
 .scorecard-val-huge {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
 }
 
@@ -640,28 +642,29 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .filter-pills-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   background: rgba(10, 15, 26, 0.85);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 4px;
+  padding: 3px;
   flex-wrap: wrap;
 }
 
 .filter-pill-btn {
   background: transparent;
   border: none;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--text-muted);
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -703,10 +706,10 @@ body {
   background: rgba(10, 15, 26, 0.9);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 7px 14px;
-  font-size: 12px;
+  padding: 6px 12px;
+  font-size: 11.5px;
   color: #ffffff;
-  width: 220px;
+  width: 200px;
   outline: none;
   transition: border-color 0.2s;
 }
@@ -719,16 +722,16 @@ body {
   color: var(--text-dim);
 }
 
-/* Rule Audit Cards List */
+/* Rule Audit Cards List with Infinite Clean Vertical Scroll */
 .rules-cards-scroller {
-  flex: 1;
+  flex: 1 1 0%;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-right: 6px;
-  max-height: calc(100vh - 280px);
-  min-height: 400px;
+  gap: 16px;
+  padding-right: 8px;
+  padding-bottom: 32px;
 }
 
 .rule-audit-card {
@@ -736,9 +739,11 @@ body {
   backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: visible;
   transition: all 0.2s ease;
   width: 100%;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 .rule-audit-card:hover {
@@ -746,50 +751,50 @@ body {
 }
 
 .rule-card-pass {
-  border-color: rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .rule-card-fail {
-  border-color: rgba(244, 63, 94, 0.35);
-  background: rgba(244, 63, 94, 0.04);
+  border-color: rgba(244, 63, 94, 0.4);
+  background: rgba(244, 63, 94, 0.05);
 }
 
 .rule-card-abstain {
-  border-color: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 .rule-card-header {
-  padding: 12px 16px;
+  padding: 16px 20px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
   cursor: pointer;
   user-select: none;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(15, 23, 42, 0.5);
   flex-wrap: wrap;
   width: 100%;
+  min-height: 72px;
 }
 
 .rule-card-header:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .rule-header-left {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 12px;
   flex: 1;
-  min-width: 260px;
-  flex-wrap: wrap;
+  min-width: 280px;
 }
 
 .rule-header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  margin-top: 2px;
 }
 
 /* Badges */
@@ -797,13 +802,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px;
+  padding: 4px 11px;
   border-radius: var(--radius-full);
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .status-pill-pass {
@@ -832,7 +838,8 @@ body {
 .rule-title-group {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  flex: 1;
 }
 
 .rule-tags-row {
@@ -851,7 +858,7 @@ body {
 
 .rule-category-tag {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   padding: 1px 7px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.06);
@@ -891,15 +898,11 @@ body {
 
 .rule-name-heading {
   font-family: var(--font-display);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #ffffff;
-}
-
-.rule-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .confidence-block {
@@ -914,14 +917,14 @@ body {
 
 .confidence-val {
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: #e2e8f0;
 }
 
 .expand-chevron {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   color: var(--text-dim);
   transition: transform 0.2s ease;
 }
@@ -932,17 +935,18 @@ body {
 
 /* Rule Card Body Details */
 .rule-card-body {
-  padding: 16px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px 20px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  font-size: 12px;
+  gap: 16px;
+  font-size: 12.5px;
+  overflow: visible;
 }
 
 .section-label {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-dim);
@@ -951,12 +955,13 @@ body {
 }
 
 .reasoning-text-box {
-  background: rgba(10, 15, 26, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 15, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-md);
-  padding: 12px 14px;
+  padding: 12px 16px;
   color: #e2e8f0;
-  line-height: 1.6;
+  line-height: 1.65;
+  word-break: break-word;
 }
 
 /* Verbatim Citation Cards */
